@@ -1,6 +1,7 @@
 import React from "react";
 import { useTheme } from "./Theme/ThemeProvider";
 import { Link, Routes, Route } from "react-router-dom";
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 
 function Home() {
   return (
@@ -39,6 +40,21 @@ export default function App() {
           <button onClick={() => setMode("system")} className="px-3 py-1 border border-muted rounded">
             System
           </button>
+          <SignedOut>
+            <SignInButton mode="modal" appearance={{
+                variables: {
+                  colorPrimary: "#BF0C4F",   
+                },
+                elements: {
+                  headerTitle: "text-primary text-4xl font-bold",  
+                }
+              }}>
+              <button className="px-3 py-1 border border-muted rounded cursor-pointer">Sign In</button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
         </div>
       </nav>
 
