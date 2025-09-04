@@ -2,6 +2,11 @@ import React from "react";
 import { useTheme } from "./Theme/ThemeProvider";
 import { Link, Routes, Route } from "react-router-dom";
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
+
+
+
+import DashBoard from "./ResourcesModule/DashBoard";
 
 function Home() {
   return (
@@ -12,9 +17,41 @@ function Home() {
 }
 
 function About() {
+  const url = import.meta.env.VITE_BACKEND_URL;
+  const { isSignedIn, isLoaded, user } = useUser();
+
+  if (!isLoaded) return <div>Loading...</div>;
+
+  const handleWebHandler = async () => {
+    try {
+      const userData = {
+        id: user.id,
+        fullName: user.fullName,
+        emailAddress: user.emailAddresses[0]?.emailAddress || '',
+        imageUrl: user.imageUrl
+      };
+
+      const response = await fetch(`${url}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('User saved to MongoDB:', data);
+    } catch (error) {
+      console.error('Error saving user:', error);
+    }
+  };
+
   return (
     <div className="bg-background text-text min-h-screen flex items-center justify-center">
       <h1 className="text-primary text-4xl font-bold">About Page</h1>
+      {isSignedIn && <button onClick={handleWebHandler}>Click me to add yourself as one of the website handlers</button>}
     </div>
   );
 }
@@ -42,13 +79,13 @@ export default function App() {
           </button>
           <SignedOut>
             <SignInButton mode="modal" appearance={{
-                variables: {
-                  colorPrimary: "#BF0C4F",   
-                },
-                elements: {
-                  headerTitle: "text-primary text-4xl font-bold",  
-                }
-              }}>
+              variables: {
+                colorPrimary: "#BF0C4F",
+              },
+              elements: {
+                headerTitle: "text-primary text-4xl font-bold",
+              }
+            }}>
               <button className="px-3 py-1 border border-muted rounded cursor-pointer">Sign In</button>
             </SignInButton>
           </SignedOut>
@@ -63,6 +100,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
+          <Route path="/res" element={<DashBoard />} />
         </Routes>
       </div>
 
