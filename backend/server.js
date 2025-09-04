@@ -10,6 +10,7 @@ import connectDB from './dbconfig.js'
 import departmentRouter from "./ResourceModule/Routes/dep.router.js";
 import userRouter from "./ResourceModule/Routes/webHandler.route.js";
 import subjectRouter from "./ResourceModule/Routes/subject.router.js";
+import resNodeRouter from "./ResourceModule/Routes/resNode.router.js";
 
 const app = express()
 const PORT = process.env.PORT
@@ -29,7 +30,7 @@ app.use('/api/users', userRouter);
 // routers for resource module
 app.use('/res/dep/', departmentRouter);
 app.use('/res/sub', subjectRouter);
-
+app.use('/res/node', resNodeRouter);
 
 
 // start app
