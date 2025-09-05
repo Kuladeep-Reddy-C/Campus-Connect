@@ -26,6 +26,7 @@ const subjectSchema = new mongoose.Schema(
         description: { type: String },
 
         creatorId: { type: String, required: true },
+        deptId: {type: String},
 
         tags: [{ type: String }],
 

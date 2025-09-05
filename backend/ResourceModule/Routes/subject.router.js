@@ -2,19 +2,20 @@ import express from 'express';
 import Subject from '../Models/subject.model.js';
 import ResourceNode from '../Models/resNode.model.js';
 import Edge from '../Models/edge.model.js';
+import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
 
 // Create a Subject
-router.post('/',async (req, res) => {
+router.post('/', requireAuth(), async (req, res) => {
     try {
         const bodyData = req.body;
         const nodes = [];
         const edges = [];
 
         // Validate required fields
-        if (!bodyData.name) {
-            return res.status(400).json({ message: 'Missing required field: name' });
+        if (!bodyData.name || !bodyData.creatorId || !bodyData.deptId) {
+            return res.status(400).json({ message: 'Missing required fields: name, creatorId, or deptId' });
         }
 
         const subject = new Subject({ ...bodyData, nodes, edges });
@@ -22,13 +23,13 @@ router.post('/',async (req, res) => {
 
         res.status(201).json(subject);
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ message: error.message });
     }
 });
 
 // Get all Subjects
-router.get('/', async (req, res) => {
+router.get('/', requireAuth(), async (req, res) => {
     try {
         const subjects = await Subject.find().populate('nodes').populate('edges');
         res.json(subjects);
@@ -42,6 +43,59 @@ router.get('/:id', async (req, res) => {
     try {
         const subject = await Subject.findById(req.params.id).populate('nodes').populate('edges');
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
+        res.json(subject);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Increment Views
+router.post('/:id/views', requireAuth(), async (req, res) => {
+    try {
+        const subject = await Subject.findByIdAndUpdate(
+            req.params.id,
+            { $inc: { views: 1 } },
+            { new: true }
+        );
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+        res.json(subject);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Toggle Star
+router.post('/:id/star', requireAuth(), async (req, res) => {
+    try {
+        const { userId } = req.auth;
+        const subject = await Subject.findById(req.params.id);
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+
+        const isStarred = subject.stars.includes(userId);
+        if (isStarred) {
+            subject.stars = subject.stars.filter(id => id !== userId);
+        } else {
+            subject.stars.push(userId);
+        }
+        await subject.save();
+        res.json(subject);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Add Comment
+router.post('/:id/comments', requireAuth(), async (req, res) => {
+    try {
+        const { userId } = req.auth;
+        const { text } = req.body;
+        if (!text) return res.status(400).json({ message: 'Comment text is required' });
+
+        const subject = await Subject.findById(req.params.id);
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+
+        subject.comments.push({ userId, text });
+        await subject.save();
         res.json(subject);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -88,7 +142,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete Subject by ID
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth(), async (req, res) => {
     try {
         const deletedSubject = await Subject.findByIdAndDelete(req.params.id);
         if (!deletedSubject) return res.status(404).json({ message: 'Subject not found' });
