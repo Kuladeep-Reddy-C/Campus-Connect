@@ -2,16 +2,33 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import { Button } from "../ui/button";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 
-export function AddNodeModal({ isOpen, onClose, onSubmit }) {
+export function AddNodeModal({ isOpen, onClose, onSubmit, nodes }) {
+    const [selectedNodeType, setSelectedNodeType] = useState("resource");
+
+    const hasStartNode = nodes.some((node) => node.type === "start");
+    const hasEndNode = nodes.some((node) => node.type === "end");
+
+    const nodeOptions = [
+        { value: "resource", label: "Resource", disabled: false },
+        { value: "start", label: "Start", disabled: hasStartNode },
+        { value: "end", label: "End", disabled: hasEndNode },
+    ];
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        onSubmit("resource");
+        if (selectedNodeType === "start" && hasStartNode) {
+            toast.error("Only one Start node is allowed.");
+            return;
+        }
+        if (selectedNodeType === "end" && hasEndNode) {
+            toast.error("Only one End node is allowed.");
+            return;
+        }
+        onSubmit(selectedNodeType);
         onClose();
-
     };
 
     return (
@@ -36,8 +53,43 @@ export function AddNodeModal({ isOpen, onClose, onSubmit }) {
                                 htmlFor="nodeType"
                                 className="block text-sm font-medium text-text mb-2"
                             >
-                                Node Shape
+                                Node Type
                             </label>
+                            <Select.Root
+                                value={selectedNodeType}
+                                onValueChange={setSelectedNodeType}
+                            >
+                                <Select.Trigger
+                                    className="w-full flex justify-between items-center bg-background border border-muted rounded-md px-3 py-2 text-text"
+                                    aria-label="Node Type"
+                                >
+                                    <Select.Value placeholder="Select a node type" />
+                                    <Select.Icon>
+                                        <ChevronDown className="w-4 h-4" />
+                                    </Select.Icon>
+                                </Select.Trigger>
+                                <Select.Portal>
+                                    <Select.Content
+                                        className="bg-card border border-muted rounded-md shadow-lg z-50"
+                                    >
+                                        <Select.Viewport>
+                                            {nodeOptions.map((option) => (
+                                                <Select
+
+                                                    .Item
+                                                    key={option.value}
+                                                    value={option.value}
+                                                    disabled={option.disabled}
+                                                    className={`px-3 py-2 text-text hover:bg-muted cursor-pointer ${option.disabled ? "opacity-50 cursor-not-allowed" : ""
+                                                        }`}
+                                                >
+                                                    <Select.ItemText>{option.label}</Select.ItemText>
+                                                </Select.Item>
+                                            ))}
+                                        </Select.Viewport>
+                                    </Select.Content>
+                                </Select.Portal>
+                            </Select.Root>
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button

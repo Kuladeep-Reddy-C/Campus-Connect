@@ -592,6 +592,7 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
           isOpen={isNodeModalOpen}
           onClose={() => setIsNodeModalOpen(false)}
           onSubmit={addNewNode}
+          nodes={nodes}
         />
       </div>
     </div>

@@ -42,7 +42,6 @@ function ResourceNode({ id, data }) {
         name: "",
         type: "notes",
         url: "",
-        completed: false,
     });
     const url = import.meta.env.VITE_BACKEND_URL;
 
@@ -89,7 +88,7 @@ function ResourceNode({ id, data }) {
         const updatedResources = [...resources, resource];
         setResources(updatedResources);
         setIsAddResourceModalOpen(false);
-        setNewResource({ name: "", type: "notes", url: "", completed: false });
+        setNewResource({ name: "", type: "notes", url: "" });
 
         try {
             const response = await fetch(`${url}/res/node/${id}`, {
@@ -115,39 +114,6 @@ function ResourceNode({ id, data }) {
             toast.error("Failed to add resource.");
         }
     };
-
-    const toggleResourceComplete = async (resourceId) => {
-        const updatedResources = resources.map((res) =>
-            res.id === resourceId ? { ...res, completed: !res.completed } : res
-        );
-        setResources(updatedResources);
-
-        try {
-            const response = await fetch(`${url}/res/node/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    data: {
-                        label,
-                        resources: updatedResources,
-                        isRoot: data.isRoot,
-                        isEditing,
-                    },
-                }),
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            toast.success("Resource status updated!");
-        } catch (error) {
-            console.error("Error updating resource status:", error);
-            toast.error("Failed to update resource status.");
-        }
-    };
-
-    const allCompleted = resources.length > 0 && resources.every((res) => res.completed);
 
     return (
         <div className="group transition-colors duration-300">
@@ -178,7 +144,7 @@ function ResourceNode({ id, data }) {
 
             <Card
                 className={`min-w-48 bg-card border border-muted shadow-card transition-colors duration-300 ${data.isRoot ? "border-primary border-2 shadow-glow" : ""
-                    } ${isExpanded ? "min-h-64" : ""} ${allCompleted ? "bg-slate-800 text-slate-300" : ""}`}
+                    } ${isExpanded ? "min-h-64" : ""}`}
             >
                 <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -252,23 +218,14 @@ function ResourceNode({ id, data }) {
                                     return (
                                         <div
                                             key={resource.id}
-                                            className={`flex items-center justify-between p-2 rounded-md ${resource.completed
-                                                    ? "bg-green-100 border border-green-400 text-green-700"
-                                                    : "bg-muted/30 hover:bg-muted/50 border border-muted text-text"
-                                                } transition-colors group/resource cursor-pointer`}
+                                            className="flex items-center justify-between p-2 rounded-md bg-muted/30 hover:bg-muted/50 border border-muted text-text transition-colors group/resource cursor-pointer"
                                             onClick={() => window.open(resource.url, "_blank")}
                                         >
                                             <div className="flex items-center gap-2 flex-1 min-w-0">
                                                 <Icon
-                                                    className={`w-4 h-4 ${resource.completed
-                                                            ? "text-green-600"
-                                                            : resourceColors[resource.type]
-                                                        } flex-shrink-0`}
+                                                    className={`w-4 h-4 ${resourceColors[resource.type]} flex-shrink-0`}
                                                 />
-                                                <span
-                                                    className={`text-xs truncate ${resource.completed ? "font-semibold" : ""
-                                                        }`}
-                                                >
+                                                <span className="text-xs truncate">
                                                     {resource.name}
                                                 </span>
                                             </div>
@@ -277,24 +234,6 @@ function ResourceNode({ id, data }) {
                                                     size="sm"
                                                     variant="ghost"
                                                     className="w-6 h-6 p-0 opacity-0 group-hover/resource:opacity-100 transition-opacity"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        toggleResourceComplete(resource.id);
-                                                    }}
-                                                    title={
-                                                        resource.completed ? "Mark as Undone" : "Mark as Done"
-                                                    }
-                                                >
-                                                    {resource.completed ? (
-                                                        <Check className="w-3 h-3 text-green-600" />
-                                                    ) : (
-                                                        <Plus className="w-3 h-3" />
-                                                    )}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="w-6 h-6 p-0 ml-1 opacity-0 group-hover/resource:opacity-100 transition-opacity"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         window.open(resource.url, "_blank");
