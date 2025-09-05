@@ -42,6 +42,7 @@ export function BranchSelector({ onBranchSelect }) {
                     setBranches(enhancedData);
                 }
             } catch (error) {
+                console.log(error)
                 console.error("Error fetching branches:", error);
             }
         };
@@ -123,9 +124,10 @@ export function BranchSelector({ onBranchSelect }) {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ name: subjectName }),
+                body: JSON.stringify({ name: subjectName, creatorId: user.id }),
             });
             if (!subResponse.ok) {
+                console.log("error came in post sub")
                 throw new Error(`HTTP error! status: ${subResponse.status}`);
             }
             const newSubject = await subResponse.json();
@@ -156,6 +158,7 @@ export function BranchSelector({ onBranchSelect }) {
                 )
             );
         } catch (error) {
+            console.log(error)
             console.error("Error adding new subject:", error);
         }
     };

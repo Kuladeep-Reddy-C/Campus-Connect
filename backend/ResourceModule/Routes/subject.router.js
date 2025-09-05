@@ -6,21 +6,23 @@ import Edge from '../Models/edge.model.js';
 const router = express.Router();
 
 // Create a Subject
-router.post('/', async (req, res) => {
+router.post('/',async (req, res) => {
     try {
-        const { name } = req.body;
+        const bodyData = req.body;
         const nodes = [];
         const edges = [];
 
         // Validate required fields
-        if (!name) {
+        if (!bodyData.name) {
             return res.status(400).json({ message: 'Missing required field: name' });
         }
-        const subject = new Subject({ name, nodes, edges });
+
+        const subject = new Subject({ ...bodyData, nodes, edges });
         await subject.save();
 
         res.status(201).json(subject);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: error.message });
     }
 });
