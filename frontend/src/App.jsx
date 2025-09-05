@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-reac
 import { useUser } from '@clerk/clerk-react';
 
 
-
+import MindMapView from "./ResourcesModule/MindMapView";
 import DashBoard from "./ResourcesModule/DashBoard";
 
 function Home() {
@@ -100,7 +100,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/res" element={<DashBoard />} />
+          <Route path="/resources" element={<DashBoard />} />
+          <Route path="/resources/:subjectId" element={<MindMapView />} />
         </Routes>
       </div>
 

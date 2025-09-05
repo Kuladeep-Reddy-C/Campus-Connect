@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 
 const subjectSchema = new mongoose.Schema({
-    name: { type: String, required: true }
+    name: { type: String, required: true },
+    nodes: [],
+    edges: []
 }, { timestamps: true });
 
 const Subject = mongoose.model('Subject', subjectSchema);

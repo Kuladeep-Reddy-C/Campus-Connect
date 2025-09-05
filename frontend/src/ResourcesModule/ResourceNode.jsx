@@ -16,6 +16,7 @@ import {
     Link,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
+import { toast } from "sonner";
 
 const resourceIcons = {
     notes: FileText,
@@ -43,17 +44,40 @@ function ResourceNode({ id, data }) {
         url: "",
         completed: false,
     });
+    const url = import.meta.env.VITE_BACKEND_URL;
 
-    const handleSaveEdit = () => {
+    const handleSaveEdit = async () => {
         setIsEditing(false);
-        // TODO: Update node data in backend if needed
+        try {
+            const response = await fetch(`${url}/res/node/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    data: {
+                        label,
+                        resources,
+                        isRoot: data.isRoot,
+                        isEditing: false,
+                    },
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            toast.success("Node label updated!");
+        } catch (error) {
+            console.error("Error updating node label:", error);
+            toast.error("Failed to update node label.");
+        }
     };
 
     const handleAddResource = () => {
         setIsAddResourceModalOpen(true);
     };
 
-    const handleSaveResource = () => {
+    const handleSaveResource = async () => {
         if (!newResource.name || !newResource.url) {
             alert("Name and URL are required!");
             return;
@@ -62,25 +86,71 @@ function ResourceNode({ id, data }) {
             id: `resource-${Date.now()}`,
             ...newResource,
         };
-        setResources([...resources, resource]);
+        const updatedResources = [...resources, resource];
+        setResources(updatedResources);
         setIsAddResourceModalOpen(false);
         setNewResource({ name: "", type: "notes", url: "", completed: false });
-        // TODO: Update resources in backend if needed
+
+        try {
+            const response = await fetch(`${url}/res/node/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    data: {
+                        label,
+                        resources: updatedResources,
+                        isRoot: data.isRoot,
+                        isEditing,
+                    },
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            toast.success("Resource added!");
+        } catch (error) {
+            console.error("Error adding resource:", error);
+            toast.error("Failed to add resource.");
+        }
     };
 
-    const toggleResourceComplete = (resourceId) => {
-        const updated = resources.map((res) =>
+    const toggleResourceComplete = async (resourceId) => {
+        const updatedResources = resources.map((res) =>
             res.id === resourceId ? { ...res, completed: !res.completed } : res
         );
-        setResources(updated);
-        // TODO: Update resources in backend if needed
+        setResources(updatedResources);
+
+        try {
+            const response = await fetch(`${url}/res/node/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    data: {
+                        label,
+                        resources: updatedResources,
+                        isRoot: data.isRoot,
+                        isEditing,
+                    },
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            toast.success("Resource status updated!");
+        } catch (error) {
+            console.error("Error updating resource status:", error);
+            toast.error("Failed to update resource status.");
+        }
     };
 
     const allCompleted = resources.length > 0 && resources.every((res) => res.completed);
 
     return (
         <div className="group transition-colors duration-300">
-            {/* Handles on all sides with unique IDs */}
             <Handle
                 type="target"
                 position={Position.Top}
@@ -108,11 +178,9 @@ function ResourceNode({ id, data }) {
 
             <Card
                 className={`min-w-48 bg-card border border-muted shadow-card transition-colors duration-300 ${data.isRoot ? "border-primary border-2 shadow-glow" : ""
-                    } ${isExpanded ? "min-h-64" : ""} ${allCompleted ? "bg-slate-800 text-slate-300" : ""
-                    }`}
+                    } ${isExpanded ? "min-h-64" : ""} ${allCompleted ? "bg-slate-800 text-slate-300" : ""}`}
             >
                 <div className="p-4">
-                    {/* Header */}
                     <div className="flex items-center justify-between mb-3">
                         {isEditing ? (
                             <div className="flex items-center gap-2 flex-1">
@@ -153,7 +221,6 @@ function ResourceNode({ id, data }) {
                         )}
                     </div>
 
-                    {/* Resources badge */}
                     {resources.length > 0 && (
                         <div className="flex items-center justify-between mb-3">
                             <Badge
@@ -176,7 +243,6 @@ function ResourceNode({ id, data }) {
                         </div>
                     )}
 
-                    {/* Resource list */}
                     {(isExpanded || resources.length <= 2) && (
                         <div className="space-y-2 mb-3">
                             {resources
@@ -244,7 +310,6 @@ function ResourceNode({ id, data }) {
                         </div>
                     )}
 
-                    {/* Add resource */}
                     <Button
                         size="sm"
                         variant="outline"
@@ -257,7 +322,6 @@ function ResourceNode({ id, data }) {
                 </div>
             </Card>
 
-            {/* Add Resource Modal */}
             <Dialog open={isAddResourceModalOpen} onOpenChange={setIsAddResourceModalOpen}>
                 <DialogContent className="sm:max-w-[425px] bg-card text-text border border-muted p-6 rounded-lg">
                     <DialogTitle className="text-lg font-semibold">Add Resource</DialogTitle>

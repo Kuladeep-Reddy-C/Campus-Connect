@@ -11,6 +11,7 @@ import departmentRouter from "./ResourceModule/Routes/dep.router.js";
 import userRouter from "./ResourceModule/Routes/webHandler.route.js";
 import subjectRouter from "./ResourceModule/Routes/subject.router.js";
 import resNodeRouter from "./ResourceModule/Routes/resNode.router.js";
+import resEdgeRouter from './ResourceModule/Routes/edge.router.js';
 
 const app = express()
 const PORT = process.env.PORT
@@ -31,6 +32,7 @@ app.use('/api/users', userRouter);
 app.use('/res/dep/', departmentRouter);
 app.use('/res/sub', subjectRouter);
 app.use('/res/node', resNodeRouter);
+app.use('/res/edge', resEdgeRouter);
 
 
 // start app
