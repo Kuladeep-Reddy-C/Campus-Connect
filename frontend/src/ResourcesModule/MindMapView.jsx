@@ -18,7 +18,8 @@ import { AddNodeModal } from "./components/AddNodeModal";
 import { toast } from "sonner";
 import PropTypes from "prop-types";
 import { useParams } from "react-router-dom";
-import { debounce } from "lodash"; // Ensure lodash is installed for debouncing
+import { debounce } from "lodash";
+import { useUser, useAuth } from "@clerk/clerk-react";
 
 function CircleNode({ data, isStart = false }) {
   const baseClasses =
@@ -77,12 +78,15 @@ const initialEdges = [];
 
 export default function MindMapView() {
   const { subjectId } = useParams();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const [isWebHandler, setIsWebHandler] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isNodeModalOpen, setIsNodeModalOpen] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const [mode, setMode] = useState("edit");
+  const [mode, setMode] = useState("view"); // Default mode set to "view"
   const [subjectName, setSubjectName] = useState("");
   const [loading, setLoading] = useState(true);
   const url = import.meta.env.VITE_BACKEND_URL;
@@ -197,16 +201,37 @@ export default function MindMapView() {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        draggable: mode === "edit",
+        draggable: mode === "edit" && isSignedIn && isWebHandler,
       }))
     );
-  }, [mode, setNodes]);
+  }, [mode, setNodes, isSignedIn, isWebHandler]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isLoaded && isSignedIn && user) {
+        try {
+          const response = await fetch(`${url}/api/users/${user.id}`);
+          if (response.ok) {
+            setIsWebHandler(true);
+          } else {
+            setIsWebHandler(false);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setIsWebHandler(false);
+        }
+      } else {
+        setIsWebHandler(false);
+      }
+    };
+    fetchUserData();
+  }, [isLoaded, isSignedIn, user, url]);
 
   // Handle node position changes
   const handleNodesChange = useCallback(
     (changes) => {
       onNodesChange(changes);
-      if (mode !== "edit") return;
+      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
 
       changes.forEach((change) => {
         if (change.type === "position" && change.position && change.dragging) {
@@ -216,12 +241,12 @@ export default function MindMapView() {
         }
       });
     },
-    [onNodesChange, mode, updateNodePosition]
+    [onNodesChange, mode, updateNodePosition, isSignedIn, isWebHandler]
   );
 
   const onConnect = useCallback(
     async (params) => {
-      if (mode !== "edit") return;
+      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
       const newEdge = {
         ...params,
         type: "default",
@@ -263,12 +288,12 @@ export default function MindMapView() {
         toast.error("Failed to create edge.");
       }
     },
-    [setEdges, mode, subjectId, url, edges]
+    [setEdges, mode, subjectId, url, edges, isSignedIn, isWebHandler]
   );
 
   const onEdgeUpdate = useCallback(
     async (oldEdge, newConnection) => {
-      if (mode !== "edit") return;
+      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
       try {
         const response = await fetch(`${url}/res/edge/${oldEdge.id}`, {
           method: "PUT",
@@ -307,32 +332,32 @@ export default function MindMapView() {
         toast.error("Failed to update edge.");
       }
     },
-    [setEdges, mode, url]
+    [setEdges, mode, url, isSignedIn, isWebHandler]
   );
 
   const onEdgeClick = useCallback(
     (event, edge) => {
-      if (mode === "edit") {
+      if (mode === "edit" && isSignedIn && isWebHandler) {
         setSelectedEdgeId(edge.id);
         setSelectedNodeId(null);
       }
     },
-    [mode]
+    [mode, isSignedIn, isWebHandler]
   );
 
   const onNodeClick = useCallback(
     (event, node) => {
-      if (mode === "edit") {
+      if (mode === "edit" && isSignedIn && isWebHandler) {
         setSelectedNodeId(node.id);
         setSelectedEdgeId(null);
       }
     },
-    [mode]
+    [mode, isSignedIn, isWebHandler]
   );
 
   useEffect(() => {
     const handleKeyDown = async (event) => {
-      if (event.key === "Delete" && mode === "edit") {
+      if (event.key === "Delete" && mode === "edit" && isSignedIn && isWebHandler) {
         if (selectedEdgeId) {
           try {
             const response = await fetch(`${url}/res/edge/${selectedEdgeId}`, {
@@ -403,18 +428,18 @@ export default function MindMapView() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedEdgeId, selectedNodeId, setEdges, setNodes, mode, url, subjectId, nodes, edges]);
+  }, [selectedEdgeId, selectedNodeId, setEdges, setNodes, mode, url, subjectId, nodes, edges, isSignedIn, isWebHandler]);
 
   const onPaneClick = useCallback(() => {
-    if (mode === "edit") {
+    if (mode === "edit" && isSignedIn && isWebHandler) {
       setSelectedEdgeId(null);
       setSelectedNodeId(null);
     }
-  }, [mode]);
+  }, [mode, isSignedIn, isWebHandler]);
 
   const addNewNode = useCallback(
     async (nodeType) => {
-      if (mode !== "edit") return;
+      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
       const hasRoot = nodes.some((node) => node.data.isRoot && node.type === "resource");
       const newNode = {
         type: nodeType,
@@ -473,19 +498,21 @@ export default function MindMapView() {
         toast.error("Failed to create node.");
       }
     },
-    [setNodes, nodes, mode, subjectId, url]
+    [setNodes, nodes, mode, subjectId, url, isSignedIn, isWebHandler]
   );
 
   const handleAddNodeClick = () => {
-    if (mode === "edit") {
+    if (mode === "edit" && isSignedIn && isWebHandler) {
       setIsNodeModalOpen(true);
     }
   };
 
   const toggleMode = () => {
-    setMode((prev) => (prev === "edit" ? "view" : "edit"));
-    setSelectedEdgeId(null);
-    setSelectedNodeId(null);
+    if (isSignedIn && isWebHandler) {
+      setMode((prev) => (prev === "edit" ? "view" : "edit"));
+      setSelectedEdgeId(null);
+      setSelectedNodeId(null);
+    }
   };
 
   const nodeClassName = (node) => {
@@ -506,41 +533,6 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
 
   return (
     <div className="h-screen bg-background text-text flex flex-col transition-colors duration-300">
-      <div className="bg-card border-b border-muted px-4 py-1 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => window.history.back()}
-            className="text-text hover:bg-muted/20 p-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-lg font-semibold text-text">{subjectName.toUpperCase()}</h1>
-            <p className="text-muted text-xs capitalize">Mind Map</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleAddNodeClick}
-            className="bg-card hover:bg-muted/20 text-text border border-muted text-sm py-1 px-3"
-            variant="outline"
-            disabled={mode === "view"}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Node
-          </Button>
-          <Button
-            onClick={toggleMode}
-            className="bg-card hover:bg-muted/20 text-text border border-muted text-sm py-1 px-3"
-            variant="outline"
-            title={mode === "edit" ? "Switch to View Mode" : "Switch to Edit Mode"}
-          >
-            {mode === "edit" ? <Eye className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-          </Button>
-        </div>
-      </div>
-
       <div className="flex-1 relative">
         {loading ? (
           <div className="flex items-center justify-center h-full">
@@ -563,8 +555,8 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
             attributionPosition="bottom-left"
             panOnScroll={true}
             zoomOnScroll={true}
-            nodesDraggable={mode === "edit"}
-            nodesConnectable={mode === "edit"}
+            nodesDraggable={mode === "edit" && isSignedIn && isWebHandler}
+            nodesConnectable={mode === "edit" && isSignedIn && isWebHandler}
           >
             <Controls
               className="bg-card border border-muted shadow-sm text-text"
@@ -587,6 +579,34 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
             <Background gap={20} size={1} color="var(--muted)" />
           </ReactFlow>
         )}
+
+        {/* Fixed Center Title */}
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-50 text-center">
+          <h1 className="text-lg font-semibold text-text">{subjectName.toUpperCase()}</h1>
+          <p className="text-muted text-xs capitalize">Mind Map</p>
+        </div>
+
+        {/* Fixed Right Buttons */}
+        <div className="absolute top-2 right-4 flex gap-2 z-50">
+          <Button
+            onClick={handleAddNodeClick}
+            className="bg-card hover:bg-muted/20 text-text border border-muted text-sm py-1 px-3"
+            variant="outline"
+            disabled={mode === "view" || !isSignedIn || !isWebHandler}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Node
+          </Button>
+          <Button
+            onClick={toggleMode}
+            className="bg-card hover:bg-muted/20 text-text border border-muted text-sm py-1 px-3"
+            variant="outline"
+            title={mode === "edit" ? "Switch to View Mode" : "Switch to Edit Mode"}
+            disabled={!isSignedIn || !isWebHandler}
+          >
+            {mode === "edit" ? <Eye className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+          </Button>
+        </div>
 
         <AddNodeModal
           isOpen={isNodeModalOpen}
