@@ -217,7 +217,7 @@ function ResourceNode({ id, data }) {
                                     const Icon = resourceIcons[resource.type] || FileText;
                                     return (
                                         <div
-                                            key={resource.id}
+                                            key={resource._id}
                                             className="flex items-center justify-between p-2 rounded-md bg-muted/30 hover:bg-muted/50 border border-muted text-text transition-colors group/resource cursor-pointer"
                                             onClick={() => window.open(resource.url, "_blank")}
                                         >

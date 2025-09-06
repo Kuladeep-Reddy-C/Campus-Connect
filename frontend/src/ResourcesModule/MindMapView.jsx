@@ -16,7 +16,6 @@ import { ArrowLeft, Plus, Eye, Edit3 } from "lucide-react";
 import ResourceNode from "./ResourceNode";
 import { AddNodeModal } from "./components/AddNodeModal";
 import { toast } from "sonner";
-import PropTypes from "prop-types";
 import { useParams } from "react-router-dom";
 import { debounce } from "lodash";
 import { useUser, useAuth } from "@clerk/clerk-react";
@@ -60,12 +59,6 @@ function CircleNode({ data, isStart = false }) {
   );
 }
 
-CircleNode.propTypes = {
-  data: PropTypes.shape({
-    label: PropTypes.string,
-  }).isRequired,
-  isStart: PropTypes.bool,
-};
 
 const nodeTypes = {
   resource: ResourceNode,
@@ -619,8 +612,3 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
   );
 }
 
-MindMapView.propTypes = {
-  branch: PropTypes.string,
-  subject: PropTypes.string,
-  onBack: PropTypes.func,
-};
