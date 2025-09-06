@@ -1,27 +1,23 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "./ui/select";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 import { AddDepartmentModal } from "./components/AddDepartmentModal";
-import { AddSubjectModal } from "./components/AddSubjectModal";
 
-export function BranchSelector({ onBranchSelect }) {
+export function BranchSelector() {
     const { isLoaded, user } = useUser();
     const url = import.meta.env.VITE_BACKEND_URL;
     const [branches, setBranches] = useState([]);
-    const [selectedBranch, setSelectedBranch] = useState("");
-    const [selectedSubject, setSelectedSubject] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
     const [isWebHandler, setIsWebHandler] = useState(false);
+    const navigate = useNavigate();
+
+    const predefinedImages = [
+        "/dep1.jpg", 
+        "/dep2.jpg",
+    ];
 
     useEffect(() => {
         let isMounted = true;
@@ -33,16 +29,17 @@ export function BranchSelector({ onBranchSelect }) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
+                console.log("Fetched branches:", data);
                 if (isMounted) {
-                    const enhancedData = data.map((dept) => ({
+                    const enhancedData = data.map((dept, index) => ({
                         ...dept,
                         id: dept._id,
                         name: dept.departmentName,
+                        deptImage: predefinedImages[index % predefinedImages.length],
                     }));
                     setBranches(enhancedData);
                 }
             } catch (error) {
-                console.log(error)
                 console.error("Error fetching branches:", error);
             }
         };
@@ -68,19 +65,18 @@ export function BranchSelector({ onBranchSelect }) {
         };
     }, [isLoaded, url, user?.id]);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            document.querySelectorAll('[data-loaded="false"]').forEach((el) => {
+                el.setAttribute('data-loaded', 'true');
+            });
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [branches]);
+
     const handleBranchClick = (branchId) => {
-        setSelectedBranch(branchId);
-        setSelectedSubject("");
-    };
-
-    const handleSubjectSelect = (subjectId) => {
-        setSelectedSubject(subjectId);
-    };
-
-    const handleOpenMindMap = () => {
-        if (selectedBranch && selectedSubject) {
-            window.open(`/resources/${selectedSubject}`, "_blank");
-        }
+        console.log("Clicked branch ID:", branchId);
+        navigate(`/resources/subject/${branchId}`);
     };
 
     const handleNewDep = () => {
@@ -106,6 +102,7 @@ export function BranchSelector({ onBranchSelect }) {
                     ...newDept,
                     id: newDept._id,
                     name: newDept.departmentName,
+                    deptImage: predefinedImages[prev.length % predefinedImages.length],
                 },
             ]);
         } catch (error) {
@@ -113,182 +110,76 @@ export function BranchSelector({ onBranchSelect }) {
         }
     };
 
-    const handleAddSubject = () => {
-        setIsSubjectModalOpen(true);
-    };
-
-    const handleSubmitSubject = async (subjectName) => {
-        try {
-            const subResponse = await fetch(`${url}/res/sub`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ name: subjectName, creatorId: user.id }),
-            });
-            if (!subResponse.ok) {
-                console.log("error came in post sub")
-                throw new Error(`HTTP error! status: ${subResponse.status}`);
-            }
-            const newSubject = await subResponse.json();
-            const newSubjectId = newSubject._id;
-
-            const currentSubjects = selectedDept?.subjects || [];
-            const updatedSubjects = [
-                ...currentSubjects,
-                { subject_id: newSubjectId, subject_name: subjectName },
-            ];
-
-            const depResponse = await fetch(`${url}/res/dep/${selectedBranch}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ subjects: updatedSubjects }),
-            });
-            if (!depResponse.ok) {
-                throw new Error(`HTTP error! status: ${depResponse.status}`);
-            }
-
-            setBranches((prev) =>
-                prev.map((branch) =>
-                    branch.id === selectedBranch
-                        ? { ...branch, subjects: updatedSubjects }
-                        : branch
-                )
-            );
-        } catch (error) {
-            console.log(error)
-            console.error("Error adding new subject:", error);
-        }
-    };
-
-    const selectedDept = branches.find((b) => b.id === selectedBranch);
-
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-6">
-            <Card className="w-full max-w-4xl bg-card shadow-lg border border-muted overflow-hidden">
-                <div className="bg-primary p-8 text-center">
-                    <BookOpen className="w-16 h-16 text-text mx-auto mb-4" />
-                    <h1 className="text-4xl font-bold text-text mb-2">Academic Mind Map</h1>
-                    <p className="text-text/80 text-lg">
-                        Navigate your learning journey through interactive knowledge trees
-                    </p>
-                </div>
+        <div className="min-h-screen bg-background relative overflow-hidden">
+            <div className="absolute inset-0 z-0">
+                <img
+                    src="/tempImg.jpg"
+                    alt="Campus Background"
+                    className="w-full h-full object-cover opacity-30"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+            </div>
 
-                <div className="p-8 space-y-12">
-                    <div>
-                        <h2 className="text-2xl font-semibold mb-6 text-text">Choose Your Branch</h2>
-                        {isWebHandler && (
-                            <Button
-                                onClick={handleNewDep}
-                                className="m-4 bg-primary hover:bg-primary/90 text-text"
-                            >
-                                Add New Department
-                            </Button>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {branches.map((branch) => (
-                                <Button
-                                    key={branch.id}
-                                    variant={selectedBranch === branch.id ? "default" : "outline"}
-                                    className={`h-24 flex flex-col gap-2 transition-all duration-300 hover:shadow-md relative overflow-hidden ${selectedBranch === branch.id
-                                            ? "bg-primary text-text"
-                                            : "bg-card hover:bg-background"
-                                        }`}
-                                    onClick={() => handleBranchClick(branch.id)}
-                                >
-                                    <style jsx>{`
-                                        .hover-slide::before {
-                                            content: '';
-                                            position: absolute;
-                                            top: 0;
-                                            left: 0;
-                                            width: 100%;
-                                            height: 100%;
-                                            background: rgba(59, 130, 246, 0.2);
-                                            transform: translateX(-100%);
-                                            transition: transform 0.3s ease-in-out;
-                                            z-index: 0;
-                                        }
-                                        .hover-slide:hover::before {
-                                            transform: translateX(0);
-                                        }
-                                        .hover-slide > * {
-                                            position: relative;
-                                            z-index: 1;
-                                        }
-                                    `}</style>
-                                    <div className="hover-slide flex flex-col items-center justify-center w-full h-full">
-                                        <BookOpen
-                                            className={`w-6 h-6 ${selectedBranch === branch.id ? "text-text" : "text-primary"
-                                                }`}
-                                        />
-                                        <span className="text-sm text-center leading-tight text-text">
-                                            {branch.name}
-                                        </span>
-                                    </div>
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
+            <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 text-center text-text">
+                <h1 className="text-4xl font-bold mb-4">Academic Resource Hub</h1>
+                <p className="text-lg text-muted mb-6">
+                    Discover a comprehensive platform designed to enhance your academic journey.
+                </p>
+                <Button className="bg-primary text-text hover:bg-primary/90">
+                    Explore Now
+                </Button>
+            </div>
 
-                    {selectedBranch && (
-                        <div className="mt-8">
-                            <h2 className="text-2xl font-semibold mb-6 text-text">Select Topic</h2>
-                            {isWebHandler && (
-                                <Button
-                                    onClick={handleAddSubject}
-                                    className="mb-4 bg-primary hover:bg-primary/90 text-text"
-                                >
-                                    Add a RoadMap
-                                </Button>
-                            )}
-                            <Select onValueChange={handleSubjectSelect} value={selectedSubject}>
-                                <SelectTrigger className="w-full h-14 text-lg bg-card border border-muted text-text focus:ring-2 focus:ring-primary">
-                                    <SelectValue placeholder="Choose a subject to explore..." />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border border-muted z-10 max-h-80 overflow-y-auto">
-                                    {selectedDept?.subjects?.map((subject) => (
-                                        <SelectItem
-                                            key={subject.subject_id}
-                                            value={subject.subject_id}
-                                            className="text-lg py-3 text-text hover:bg-background"
-                                        >
-                                            <div className="flex flex-col">
-                                                <span className="text-sm text-muted">{subject.subject_name}</span>
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-
-                    {selectedBranch && selectedSubject && (
-                        <div className="flex justify-center mt-8">
-                            <Button
-                                onClick={handleOpenMindMap}
-                                className="bg-primary hover:bg-primary/90 text-text px-8 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105"
-                            >
-                                Open Mind Map
-                                <BookOpen className="w-5 h-5 ml-2" />
-                            </Button>
-                        </div>
+            <div className="relative z-20 max-w-6xl mx-auto px-6 py-12">
+                <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-semibold text-text">Choose Your Branch</h2>
+                    {isWebHandler && (
+                        <Button
+                            onClick={handleNewDep}
+                            className="bg-primary text-text hover:bg-primary/90 flex items-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" /> Add New Department
+                        </Button>
                     )}
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {branches.map((branch, index) => (
+                        <Card
+                            key={branch.id}
+                            className="bg-card border-muted overflow-hidden transform transition-all duration-500 ease-in-out"
+                            data-loaded={false}
+                            style={{ transitionDelay: `${index * 0.1}s` }}
+                        >
+                            <div
+                                className="h-48 bg-cover bg-center relative"
+                                style={{
+                                    backgroundImage: `url(${branch.deptImage })`,
+                                    opacity: 0.9,
+                                }}
+                            >
+                                <div className="absolute inset-0 bg-black/20"></div>
+                                <div className="relative z-10 h-full flex items-center justify-center">
+                                    <Button
+                                        variant="outline"
+                                        className="text-text hover:text-primary w-full h-full flex flex-col items-center justify-center bg-transparent hover:bg-black/20 transition-all"
+                                        onClick={() => handleBranchClick(branch.id)}
+                                    >
+                                        <BookOpen className="w-8 h-8 mb-2" />
+                                        <span className="text-lg font-medium">{branch.name}</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            </div>
 
-                <AddDepartmentModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSubmit={handleAddDepartment}
-                />
-                <AddSubjectModal
-                    isOpen={isSubjectModalOpen}
-                    onClose={() => setIsSubjectModalOpen(false)}
-                    onSubmit={handleSubmitSubject}
-                />
-            </Card>
+            <AddDepartmentModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleAddDepartment}
+            />
         </div>
     );
 }

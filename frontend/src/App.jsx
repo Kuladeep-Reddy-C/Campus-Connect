@@ -6,15 +6,10 @@ import { useUser } from '@clerk/clerk-react';
 
 
 import MindMapView from "./ResourcesModule/MindMapView";
-import DashBoard from "./ResourcesModule/DashBoard";
+import SubjectSelector from "./ResourcesModule/SubjectSelector";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { BranchSelector } from "./ResourcesModule/BranchSelector";
 
-function Home() {
-  return (
-    <div className="bg-background text-text min-h-screen flex items-center justify-center">
-      <h1 className="text-primary text-4xl font-bold">Home Page</h1>
-    </div>
-  );
-}
 
 function About() {
   const url = import.meta.env.VITE_BACKEND_URL;
@@ -98,16 +93,13 @@ export default function App() {
       {/* Routes */}
       <div className="flex-1">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<h1>Home Page</h1>} />
           <Route path="/about" element={<About />} />
-          <Route path="/resources" element={<DashBoard />} />
+          <Route path="/resources" element={<BranchSelector />} />
           <Route path="/resources/:subjectId" element={<MindMapView />} />
+          <Route path="/resources/subject/:departmentId" element={<ProtectedRoute><SubjectSelector /></ProtectedRoute>} />
         </Routes>
       </div>
-
-      <footer className="bg-card border-t border-muted p-4 text-center">
-        Current Mode: <strong>{mode}</strong>
-      </footer>
     </div>
   );
 }
