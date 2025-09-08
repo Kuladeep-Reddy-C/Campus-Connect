@@ -73,6 +73,7 @@ export default function MindMapView() {
   const { subjectId } = useParams();
   const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
+  const [creatorId, setCreatorId] = useState(null);
   const [isWebHandler, setIsWebHandler] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -122,6 +123,8 @@ export default function MindMapView() {
           throw new Error(`HTTP error! status: ${subjectResponse.status}`);
         }
         const subjectData = await subjectResponse.json();
+        console.log("subject creator", subjectData.creatorId);
+        setCreatorId(subjectData.creatorId);
         setSubjectName(subjectData.name || "Unnamed Subject");
 
         // Fetch nodes
@@ -194,10 +197,10 @@ export default function MindMapView() {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        draggable: mode === "edit" && isSignedIn && isWebHandler,
+        draggable: mode === "edit" && isSignedIn && isWebHandler || (user?.id == creatorId),
       }))
     );
-  }, [mode, setNodes, isSignedIn, isWebHandler]);
+  }, [mode, setNodes, isSignedIn, isWebHandler, creatorId]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -224,7 +227,14 @@ export default function MindMapView() {
   const handleNodesChange = useCallback(
     (changes) => {
       onNodesChange(changes);
-      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
+      if (
+        mode !== "edit" ||
+        !isSignedIn ||
+        !(isWebHandler || creatorId == user?.id)
+      ) {
+        return;
+      }
+
 
       changes.forEach((change) => {
         if (change.type === "position" && change.position && change.dragging) {
@@ -234,12 +244,19 @@ export default function MindMapView() {
         }
       });
     },
-    [onNodesChange, mode, updateNodePosition, isSignedIn, isWebHandler]
+    [onNodesChange, mode, updateNodePosition, isSignedIn, isWebHandler, creatorId]
   );
 
   const onConnect = useCallback(
     async (params) => {
-      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
+      if (
+        mode !== "edit" ||
+        !isSignedIn ||
+        !(isWebHandler || creatorId == user?.id)
+      ) {
+        return;
+      }
+
       const newEdge = {
         ...params,
         type: "default",
@@ -281,12 +298,19 @@ export default function MindMapView() {
         toast.error("Failed to create edge.");
       }
     },
-    [setEdges, mode, subjectId, url, edges, isSignedIn, isWebHandler]
+    [setEdges, mode, subjectId, url, edges, isSignedIn, isWebHandler, creatorId]
   );
 
   const onEdgeUpdate = useCallback(
     async (oldEdge, newConnection) => {
-      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
+      if (
+        mode !== "edit" ||
+        !isSignedIn ||
+        !(isWebHandler || creatorId == user?.id)
+      ) {
+        return;
+      }
+
       try {
         const response = await fetch(`${url}/res/edge/${oldEdge.id}`, {
           method: "PUT",
@@ -325,27 +349,34 @@ export default function MindMapView() {
         toast.error("Failed to update edge.");
       }
     },
-    [setEdges, mode, url, isSignedIn, isWebHandler]
+    [setEdges, mode, url, isSignedIn, isWebHandler, creatorId]
   );
 
   const onEdgeClick = useCallback(
     (event, edge) => {
-      if (mode === "edit" && isSignedIn && isWebHandler) {
+      if (
+        mode !== "edit" ||
+        !isSignedIn ||
+        !(isWebHandler || creatorId == user?.id)
+      ) {
+        return;
+      }
+      {
         setSelectedEdgeId(edge.id);
         setSelectedNodeId(null);
       }
     },
-    [mode, isSignedIn, isWebHandler]
+    [mode, isSignedIn, isWebHandler, creatorId]
   );
 
   const onNodeClick = useCallback(
     (event, node) => {
-      if (mode === "edit" && isSignedIn && isWebHandler) {
+      if (mode === "edit" && isSignedIn && (isWebHandler || (creatorId == user?.id))) {
         setSelectedNodeId(node.id);
         setSelectedEdgeId(null);
       }
     },
-    [mode, isSignedIn, isWebHandler]
+    [mode, isSignedIn, isWebHandler, creatorId]
   );
 
   useEffect(() => {
@@ -421,7 +452,7 @@ export default function MindMapView() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedEdgeId, selectedNodeId, setEdges, setNodes, mode, url, subjectId, nodes, edges, isSignedIn, isWebHandler]);
+  }, [selectedEdgeId, selectedNodeId, setEdges, setNodes, mode, url, subjectId, nodes, edges, isSignedIn, isWebHandler, creatorId]);
 
   const onPaneClick = useCallback(() => {
     if (mode === "edit" && isSignedIn && isWebHandler) {
@@ -495,13 +526,13 @@ export default function MindMapView() {
   );
 
   const handleAddNodeClick = () => {
-    if (mode === "edit" && isSignedIn && isWebHandler) {
+    if (mode === "edit" && isSignedIn && isWebHandler && (creatorId == user?.id)) {
       setIsNodeModalOpen(true);
     }
   };
 
   const toggleMode = () => {
-    if (isSignedIn && isWebHandler) {
+    if (isSignedIn && isWebHandler && (creatorId == user?.id)) {
       setMode((prev) => (prev === "edit" ? "view" : "edit"));
       setSelectedEdgeId(null);
       setSelectedNodeId(null);
