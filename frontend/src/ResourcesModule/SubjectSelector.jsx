@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { BookOpen, Eye, Star, MessageCircle, Calendar, User, Tag, Hash, Plus, ExternalLink, X } from "lucide-react";
+import { BookOpen, Eye, Star, MessageCircle, Calendar, MessageSquare,User, Tag, Hash, Plus, ExternalLink, X } from "lucide-react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { AddSubjectModal } from "./components/AddSubjectModal";
 import { toast } from "react-toastify";
@@ -488,13 +488,14 @@ export default function SubjectSelector() {
                                     </span>
                                     <Button
                                         variant="outline"
-                                        className="ml-2 text-[var(--primary)] border-[var(--primary)] hover:bg-[var(--primary)] hover:text-white"
+                                        size="icon"
+                                        className="ml-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white rounded-full"
                                         onClick={() => {
                                             setSelectedSubjectId(subject.subject_id);
                                             setIsCommentDialogOpen(true);
                                         }}
                                     >
-                                        Comment
+                                        <MessageSquare className="h-4 w-4" />
                                     </Button>
                                 </>
                             )}
@@ -507,8 +508,8 @@ export default function SubjectSelector() {
                         }}
                         className="ml-4"
                     >
-                        Open Mind Map
-                        <ExternalLink className="w-4 h-4 ml-2" />
+                        
+                        <ExternalLink className="w-4 h-4" />
                     </Button>
                 </div>
 
