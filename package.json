@@ -1,0 +1,29 @@
+{
+  "name": "campus-connect",
+  "version": "1.0.0",
+  "description": "--readme-- Added new Branch",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch backend/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kuladeep-Reddy-C/Campus-Connect.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Kuladeep-Reddy-C/Campus-Connect/issues"
+  },
+  "homepage": "https://github.com/Kuladeep-Reddy-C/Campus-Connect#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "mongodb": "^6.19.0",
+    "mongoose": "^8.18.0"
+  }
+}

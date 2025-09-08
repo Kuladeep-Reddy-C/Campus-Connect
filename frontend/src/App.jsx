@@ -2,6 +2,7 @@ import React from "react";
 import { useTheme } from "./Theme/ThemeProvider";
 import { Link, Routes, Route } from "react-router-dom";
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import CollaborationDashboard from "./Collaborator/CollaborationDashboard";
 
 function Home() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <div className="flex gap-4">
           <Link to="/" className="text-primary font-bold">Home</Link>
           <Link to="/about" className="text-primary font-bold">About</Link>
+          <Link to="/collaborate" className="text-primary font-bold">Collaborate</Link>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setMode("light")} className="px-3 py-1 border border-muted rounded">
@@ -63,6 +65,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
+          <Route path="/collaborate" element={<CollaborationDashboard/>} />
         </Routes>
       </div>
 
