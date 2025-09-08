@@ -115,6 +115,7 @@ export default function MindMapView() {
 
   useEffect(() => {
     const fetchSubjectData = async () => {
+      if (!user) return;
       try {
         setLoading(true);
         // Fetch subject data
@@ -124,6 +125,8 @@ export default function MindMapView() {
         }
         const subjectData = await subjectResponse.json();
         console.log("subject creator", subjectData.creatorId);
+        console.log("Is Creator", subjectData.creatorId == user?.id);
+        console.log("Current user Id", user?.id);
         setCreatorId(subjectData.creatorId);
         setSubjectName(subjectData.name || "Unnamed Subject");
 
@@ -137,7 +140,6 @@ export default function MindMapView() {
         });
         const nodeData = await Promise.all(nodePromises);
 
-        // Map nodes to React Flow format
         setNodes(
           nodeData.map((node) => ({
             id: node._id,
@@ -148,10 +150,14 @@ export default function MindMapView() {
               resources: node.data.resources,
               isRoot: node.data.isRoot,
               isEditing: node.data.isEditing,
+              creatorId: subjectData.creatorId,   // ✅ use subjectData directly
+              isWebHandler: isWebHandler
             },
             draggable: node.draggable,
           }))
         );
+
+
 
         // Fetch edges
         const edgePromises = subjectData.edges.map(async (edgeId) => {
@@ -191,16 +197,16 @@ export default function MindMapView() {
     if (subjectId) {
       fetchSubjectData();
     }
-  }, [subjectId, url, setNodes, setEdges]);
+  }, [subjectId, url, setNodes, setEdges, isLoaded]);
 
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        draggable: mode === "edit" && isSignedIn && isWebHandler || (user?.id == creatorId),
+        draggable: mode === "edit" && isSignedIn && (isWebHandler || (user?.id == creatorId)),
       }))
     );
-  }, [mode, setNodes, isSignedIn, isWebHandler, creatorId]);
+  }, [mode, user, setNodes, isSignedIn, isWebHandler, creatorId]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -381,7 +387,8 @@ export default function MindMapView() {
 
   useEffect(() => {
     const handleKeyDown = async (event) => {
-      if (event.key === "Delete" && mode === "edit" && isSignedIn && isWebHandler) {
+      if (event.key === "Delete" && mode === "edit" && isSignedIn && (isWebHandler || creatorId == user?.id)) {
+        console.log("Deleteing")
         if (selectedEdgeId) {
           try {
             const response = await fetch(`${url}/res/edge/${selectedEdgeId}`, {
@@ -455,15 +462,15 @@ export default function MindMapView() {
   }, [selectedEdgeId, selectedNodeId, setEdges, setNodes, mode, url, subjectId, nodes, edges, isSignedIn, isWebHandler, creatorId]);
 
   const onPaneClick = useCallback(() => {
-    if (mode === "edit" && isSignedIn && isWebHandler) {
+    if (mode === "edit" && isSignedIn && (isWebHandler || creatorId == user?.id)) {
       setSelectedEdgeId(null);
       setSelectedNodeId(null);
     }
-  }, [mode, isSignedIn, isWebHandler]);
+  }, [mode, isSignedIn, isWebHandler, creatorId]);
 
   const addNewNode = useCallback(
     async (nodeType) => {
-      if (mode !== "edit" || !isSignedIn || !isWebHandler) return;
+      if (mode !== "edit" || !isSignedIn || !(isWebHandler || creatorId == user?.id)) return;
       const hasRoot = nodes.some((node) => node.data.isRoot && node.type === "resource");
       const newNode = {
         type: nodeType,
@@ -522,17 +529,17 @@ export default function MindMapView() {
         toast.error("Failed to create node.");
       }
     },
-    [setNodes, nodes, mode, subjectId, url, isSignedIn, isWebHandler]
+    [setNodes, nodes, mode, subjectId, url, isSignedIn, isWebHandler, creatorId]
   );
 
   const handleAddNodeClick = () => {
-    if (mode === "edit" && isSignedIn && isWebHandler && (creatorId == user?.id)) {
+    if (mode === "edit" && isSignedIn && (isWebHandler || (creatorId == user?.id))) {
       setIsNodeModalOpen(true);
     }
   };
 
   const toggleMode = () => {
-    if (isSignedIn && isWebHandler && (creatorId == user?.id)) {
+    if (isSignedIn && (isWebHandler || (creatorId == user?.id))) {
       setMode((prev) => (prev === "edit" ? "view" : "edit"));
       setSelectedEdgeId(null);
       setSelectedNodeId(null);
@@ -545,8 +552,7 @@ export default function MindMapView() {
         const allCompleted =
           node.data.resources.length > 0 &&
           node.data.resources.every((r) => r.completed);
-        return `bg Cleveland
-bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-300" : ""}`;
+        return `bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-300" : ""}`;
       case "start":
       case "end":
         return "hidden";
@@ -579,8 +585,8 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
             attributionPosition="bottom-left"
             panOnScroll={true}
             zoomOnScroll={true}
-            nodesDraggable={mode === "edit" && isSignedIn && isWebHandler}
-            nodesConnectable={mode === "edit" && isSignedIn && isWebHandler}
+            nodesDraggable={mode === "edit" && isSignedIn && (isWebHandler || creatorId == user?.id)}
+            nodesConnectable={mode === "edit" && isSignedIn && (isWebHandler || creatorId == user?.id)}
           >
             <Controls
               className="bg-card border border-muted shadow-sm text-text"
@@ -616,7 +622,7 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
             onClick={handleAddNodeClick}
             className="bg-card hover:bg-muted/20 text-text border border-muted text-sm py-1 px-3"
             variant="outline"
-            disabled={mode === "view" || !isSignedIn || !isWebHandler}
+            disabled={mode === "view" || !isSignedIn || !(isWebHandler || creatorId == user?.id)}
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Node
@@ -626,7 +632,7 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
             className="bg-card hover:bg-muted/20 text-text border border-muted text-sm py-1 px-3"
             variant="outline"
             title={mode === "edit" ? "Switch to View Mode" : "Switch to Edit Mode"}
-            disabled={!isSignedIn || !isWebHandler}
+            disabled={!isSignedIn || !(isWebHandler || creatorId == user?.id)}
           >
             {mode === "edit" ? <Eye className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
           </Button>
@@ -642,4 +648,3 @@ bg-card text-text border border-muted ${allCompleted ? "bg-slate-800 text-slate-
     </div>
   );
 }
-
