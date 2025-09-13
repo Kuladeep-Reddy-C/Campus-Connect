@@ -10,6 +10,8 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, LineElement
 
 const CollaborationDashboard = () => {
   const { user } = useUser();
+  const url = import.meta.env.VITE_BACKEND_URL;
+  console.log(url);
   const [projects, setProjects] = useState([]);
   const [joinForms, setJoinForms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,8 +63,8 @@ const CollaborationDashboard = () => {
     const fetchProjectsAndForms = async () => {
       try {
         const [projectRes, formRes] = await Promise.all([
-          fetch("http://localhost:3000/api/projects"),
-          fetch("http://localhost:3000/api/join-forms"),
+          fetch(url+"/api/projects"),
+          fetch(url+"/api/join-forms"),
         ]);
 
         if (!projectRes.ok) throw new Error("Failed to fetch projects");
@@ -87,7 +89,7 @@ const CollaborationDashboard = () => {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/projects/${id}`, {
+      const res = await fetch(url+`/api/projects/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete project");
@@ -120,7 +122,7 @@ const CollaborationDashboard = () => {
         alert("Please add at least one skill.");
         return;
       }
-      const res = await fetch(`http://localhost:3000/api/projects/${editingProject._id}`, {
+      const res = await fetch(url+`/api/projects/${editingProject._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -150,7 +152,7 @@ const CollaborationDashboard = () => {
   try {
     // call your backend route
     const res = await fetch(
-      `http://localhost:3000/api/join-forms/project/${projectId}`
+      url+`/api/join-forms/project/${projectId}`
     );
 
     if (!res.ok) {
@@ -180,7 +182,7 @@ const CollaborationDashboard = () => {
         return;
       }
 
-      const res = await fetch(`http://localhost:3000/api/join-forms/${requestId}`, {
+      const res = await fetch(url+`/api/join-forms/${requestId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -200,7 +202,7 @@ const CollaborationDashboard = () => {
       );
 
       if (status === "approved") {
-        const projectRes = await fetch(`http://localhost:3000/api/projects/${projectId}`, {
+        const projectRes = await fetch(url+`/api/projects/${projectId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -227,7 +229,7 @@ const CollaborationDashboard = () => {
   const handleCancelRequest = async (requestId) => {
     if (!window.confirm("Are you sure you want to cancel this request?")) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/join-forms/${requestId}`, {
+      const res = await fetch(url+`/api/join-forms/${requestId}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -267,7 +269,7 @@ const CollaborationDashboard = () => {
         return;
       }
 
-      const res = await fetch("http://localhost:3000/api/join-forms", {
+      const res = await fetch(url+"/api/join-forms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(joinFormData),
@@ -306,7 +308,7 @@ const CollaborationDashboard = () => {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3000/api/projects", {
+      const res = await fetch(url+"/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
