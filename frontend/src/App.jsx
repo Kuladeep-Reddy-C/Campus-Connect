@@ -1,9 +1,9 @@
+// App.jsx
 import React from "react";
 import { useTheme } from "./Theme/ThemeProvider";
 import { Link, Routes, Route } from "react-router-dom";
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { useUser } from '@clerk/clerk-react';
-
 
 import CollaborationDashboard from "./Collaborator/CollaborationDashboard";
 
@@ -11,7 +11,7 @@ import MindMapView from "./ResourcesModule/MindMapView";
 import SubjectSelector from "./ResourcesModule/SubjectSelector";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BranchSelector } from "./ResourcesModule/BranchSelector";
-
+import Navbar from "./components/Navbar";
 
 function About() {
   const url = import.meta.env.VITE_BACKEND_URL;
@@ -53,45 +53,21 @@ function About() {
   );
 }
 
+function Clubs() {
+  return <h1>Clubs Page</h1>;
+}
+
+function Events() {
+  return <h1>Events Page</h1>;
+}
+
 export default function App() {
   const { mode, setMode } = useTheme();
 
   return (
     <div className="bg-background text-text min-h-screen flex flex-col">
       {/* Navbar */}
-      <nav className="bg-card border-b border-muted p-4 flex justify-between items-center">
-        <div className="flex gap-4">
-          <Link to="/" className="text-primary font-bold">Home</Link>
-          <Link to="/about" className="text-primary font-bold">About</Link>
-          <Link to="/collaborate" className="text-primary font-bold">Collaborate</Link>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setMode("light")} className="px-3 py-1 border border-muted rounded">
-            Light
-          </button>
-          <button onClick={() => setMode("dark")} className="px-3 py-1 border border-muted rounded">
-            Dark
-          </button>
-          <button onClick={() => setMode("system")} className="px-3 py-1 border border-muted rounded">
-            System
-          </button>
-          <SignedOut>
-            <SignInButton mode="modal" appearance={{
-              variables: {
-                colorPrimary: "#BF0C4F",
-              },
-              elements: {
-                headerTitle: "text-primary text-4xl font-bold",
-              }
-            }}>
-              <button className="px-3 py-1 border border-muted rounded cursor-pointer">Sign In</button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Routes */}
       <div className="flex-1">
@@ -101,7 +77,9 @@ export default function App() {
           <Route path="/resources" element={<BranchSelector />} />
           <Route path="/resources/:subjectId" element={<MindMapView />} />
           <Route path="/resources/subject/:departmentId" element={<ProtectedRoute><SubjectSelector /></ProtectedRoute>} />
-          <Route path="/collaborate" element={<CollaborationDashboard/>}/>
+          <Route path="/collaborate" element={<CollaborationDashboard />} />
+          <Route path="/clubs" element={<Clubs />} />
+          <Route path="/events" element={<Events />} />
         </Routes>
       </div>
     </div>
