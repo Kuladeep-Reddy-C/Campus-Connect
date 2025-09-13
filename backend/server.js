@@ -14,6 +14,10 @@ import resNodeRouter from "./ResourceModule/Routes/resNode.router.js";
 import resEdgeRouter from './ResourceModule/Routes/edge.router.js';
 import userInfoRouter from "./ResourceModule/Routes/user.router.js";
 
+// Collaborator Routes Imports
+import projectRoutes from "./CollaboratorModule/routes/Project.routes.js"
+import teamRoutes from "./CollaboratorModule/routes/Team.routes.js"
+
 const app = express()
 const PORT = process.env.PORT
 
@@ -35,7 +39,9 @@ app.use('/res/sub', subjectRouter);
 app.use('/res/node', resNodeRouter);
 app.use('/res/edge', resEdgeRouter);
 app.use('/user-info/', userInfoRouter);
-
+// routers for collaborator module
+app.use("/api/projects", projectRoutes)
+app.use("/api/join-forms", teamRoutes)
 
 // start app
 app.listen(PORT, () => {

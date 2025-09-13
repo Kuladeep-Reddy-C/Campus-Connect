@@ -5,6 +5,8 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-reac
 import { useUser } from '@clerk/clerk-react';
 
 
+import CollaborationDashboard from "./Collaborator/CollaborationDashboard";
+
 import MindMapView from "./ResourcesModule/MindMapView";
 import SubjectSelector from "./ResourcesModule/SubjectSelector";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -61,6 +63,7 @@ export default function App() {
         <div className="flex gap-4">
           <Link to="/" className="text-primary font-bold">Home</Link>
           <Link to="/about" className="text-primary font-bold">About</Link>
+          <Link to="/collaborate" className="text-primary font-bold">Collaborate</Link>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setMode("light")} className="px-3 py-1 border border-muted rounded">
@@ -98,6 +101,7 @@ export default function App() {
           <Route path="/resources" element={<BranchSelector />} />
           <Route path="/resources/:subjectId" element={<MindMapView />} />
           <Route path="/resources/subject/:departmentId" element={<ProtectedRoute><SubjectSelector /></ProtectedRoute>} />
+          <Route path="/collaborate" element={<CollaborationDashboard/>}/>
         </Routes>
       </div>
     </div>
