@@ -11,7 +11,7 @@ import MindMapView from "./ResourcesModule/MindMapView";
 import SubjectSelector from "./ResourcesModule/SubjectSelector";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BranchSelector } from "./ResourcesModule/BranchSelector";
-import Navbar from "./components/NavBar";
+import Navbar from "./components/Navbar";
 
 function About() {
   const url = import.meta.env.VITE_BACKEND_URL;
