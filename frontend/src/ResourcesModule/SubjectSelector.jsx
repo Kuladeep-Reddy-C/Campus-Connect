@@ -555,11 +555,11 @@ export default function SubjectSelector() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2 bg-[color-mix(in_srgb,var(--card)_95%,var(--primary)_5%)] rounded-md">
                             <div className="text-center">
                                 <div className="text-sm font-semibold text-[var(--text)]">{details.nodes?.length || 0}</div>
-                                <div className="text-xs text-[var(--muted)]">Nodes</div>
+                                <div className="text-xs text-[var(--muted)]">Modules</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-sm font-semibold text-[var(--text)]">{details.edges?.length || 0}</div>
-                                <div className="text-xs text-[var(--muted)]">Edges</div>
+                                <div className="text-xs text-[var(--muted)]">Connections</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-sm font-semibold text-[var(--text)]">{formatDate(details.createdAt)}</div>
