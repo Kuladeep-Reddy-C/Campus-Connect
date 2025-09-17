@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { BookOpen, Eye, Star, MessageCircle, Calendar, MessageSquare,User, Tag, Hash, Plus, ExternalLink, X } from "lucide-react";
+import { BookOpen, Eye, Star, MessageCircle, Calendar, MessageSquare, User, Tag, Hash, Plus, ExternalLink, X } from "lucide-react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { AddSubjectModal } from "./components/AddSubjectModal";
 import { toast } from "react-toastify";
@@ -11,8 +11,8 @@ const Button = ({ children, onClick, variant = "default", className = "", disabl
         onClick={onClick}
         disabled={disabled}
         className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${variant === "outline"
-            ? "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-            : "bg-[var(--primary)] text-white hover:bg-[color-mix(in_srgb,var(--primary)_80%,#000)]"
+                ? "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                : "bg-[var(--primary)] text-white hover:bg-[color-mix(in_srgb,var(--primary)_80%,#000)]"
             } ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-105"} ${className}`}
     >
         {children}
@@ -26,6 +26,75 @@ const Card = ({ children, className = "", isCurrentUser = false }) => (
     >
         {children}
     </div>
+);
+
+// Skeleton Loading Components
+const SkeletonLine = ({ width = "100%", height = "1rem", className = "" }) => (
+    <div
+        className={`bg-gray-300 dark:bg-gray-600 rounded animate-pulse ${className}`}
+        style={{ width, height }}
+    />
+);
+
+const SkeletonCard = () => (
+    <Card className="mb-4">
+        <div className="p-4 animate-pulse">
+            {/* Subject Header Skeleton */}
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex-1">
+                    <div className="flex items-center mb-2">
+                        <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded mr-2" />
+                        <SkeletonLine width="200px" height="1.25rem" />
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded mr-1" />
+                            <SkeletonLine width="60px" height="0.875rem" />
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded mr-1" />
+                            <SkeletonLine width="30px" height="0.875rem" />
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded mr-1" />
+                            <SkeletonLine width="20px" height="0.875rem" />
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded mr-1" />
+                            <SkeletonLine width="15px" height="0.875rem" />
+                        </div>
+                    </div>
+                </div>
+                <div className="w-20 h-10 bg-gray-300 dark:bg-gray-600 rounded ml-4" />
+            </div>
+
+            {/* Creator Info Skeleton */}
+            <div className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md mb-3">
+                <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                <div className="flex-1">
+                    <SkeletonLine width="120px" height="0.875rem" className="mb-1" />
+                    <SkeletonLine width="180px" height="0.75rem" />
+                </div>
+            </div>
+
+            {/* Tags Skeleton */}
+            <div className="flex flex-wrap gap-2 mb-3">
+                <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                <div className="w-20 h-6 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                <div className="w-14 h-6 bg-gray-300 dark:bg-gray-600 rounded-full" />
+            </div>
+
+            {/* Statistics Grid Skeleton */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+                {[...Array(4)].map((_, index) => (
+                    <div key={index} className="text-center">
+                        <SkeletonLine width="40px" height="0.875rem" className="mx-auto mb-1" />
+                        <SkeletonLine width="50px" height="0.75rem" className="mx-auto" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    </Card>
 );
 
 // Comment Dialog Component
@@ -78,19 +147,20 @@ export default function SubjectSelector() {
     const [department, setDepartment] = useState(null);
     const [subjectDetails, setSubjectDetails] = useState({});
     const [creatorInfo, setCreatorInfo] = useState({});
-    const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [loadingSubjects, setLoadingSubjects] = useState(new Set());
     const [visibleSubjects, setVisibleSubjects] = useState(3);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isWebHandler, setIsWebHandler] = useState(false);
     const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
     const [selectedSubjectId, setSelectedSubjectId] = useState(null);
     const [showComments, setShowComments] = useState({});
-    const [sortBy, setSortBy] = useState("default"); // Sorting state
+    const [sortBy, setSortBy] = useState("default");
     const loadMoreRef = useRef(null);
 
     // Fetch department data
     const fetchDepartment = async () => {
-        setLoading(true);
+        setInitialLoading(true);
         try {
             const token = await getToken();
             const response = await fetch(`${url}/res/dep/${departmentId}`, {
@@ -112,7 +182,7 @@ export default function SubjectSelector() {
             console.error("Error fetching department:", error);
             toast.error(`Failed to fetch department: ${error.message}`);
         } finally {
-            setLoading(false);
+            setInitialLoading(false);
         }
     };
 
@@ -153,7 +223,7 @@ export default function SubjectSelector() {
         async (subjectId) => {
             if (subjectDetails[subjectId]) return;
 
-            setLoading(true);
+            setLoadingSubjects((prev) => new Set([...prev, subjectId]));
             try {
                 const token = await getToken();
                 const response = await fetch(`${url}/res/sub/${subjectId}`, {
@@ -192,7 +262,11 @@ export default function SubjectSelector() {
                 console.error("Error fetching subject details:", error);
                 toast.error(`Failed to fetch subject details: ${error.message}`);
             } finally {
-                setLoading(false);
+                setLoadingSubjects((prev) => {
+                    const newSet = new Set(prev);
+                    newSet.delete(subjectId);
+                    return newSet;
+                });
             }
         },
         [subjectDetails, creatorInfo, url, getToken]
@@ -328,7 +402,7 @@ export default function SubjectSelector() {
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
-                if (entry.isIntersecting && visibleSubjects < department?.subjects?.length && !loading) {
+                if (entry.isIntersecting && visibleSubjects < department?.subjects?.length && !initialLoading && loadingSubjects.size === 0) {
                     loadMoreSubjects();
                 }
             },
@@ -340,7 +414,7 @@ export default function SubjectSelector() {
         }
 
         return () => observer.disconnect();
-    }, [visibleSubjects, department?.subjects?.length, loading]);
+    }, [visibleSubjects, department?.subjects?.length, initialLoading, loadingSubjects]);
 
     const handleAddSubject = () => {
         setIsAddModalOpen(true);
@@ -440,7 +514,10 @@ export default function SubjectSelector() {
     };
 
     const SubjectCard = ({ subject, details, creator }) => (
-        <Card className="mb-4 hover:bg-[color-mix(in_srgb,var(--card)_95%,var(--primary)_5%)] transition-colors duration-200" isCurrentUser={details?.creatorId === user?.id}>
+        <Card
+            className="mb-4 hover:bg-[color-mix(in_srgb,var(--card)_95%,var(--primary)_5%)] transition-colors duration-200"
+            isCurrentUser={details?.creatorId === user?.id}
+        >
             <div className="p-4">
                 {/* Subject Header */}
                 <div className="flex items-center justify-between mb-3">
@@ -470,7 +547,7 @@ export default function SubjectSelector() {
                                         onClick={() => toggleStar(subject.subject_id)}
                                     >
                                         <Star
-                                            className={`w-4 h-4 mr-1 ${details.stars.includes(user.id) ? "fill-[var(--primary)] text-[var(--primary)]" : ""}`}
+                                            className={`w-4 h-4 mr-1 ${details.stars?.includes(user.id) ? "fill-[var(--primary)] text-[var(--primary)]" : ""}`}
                                         />
                                         {details.stars?.length || 0}
                                     </span>
@@ -508,7 +585,6 @@ export default function SubjectSelector() {
                         }}
                         className="ml-4"
                     >
-                        
                         <ExternalLink className="w-4 h-4" />
                     </Button>
                 </div>
@@ -531,7 +607,7 @@ export default function SubjectSelector() {
                                     <p className="text-sm font-medium text-[var(--text)]">
                                         {creator.firstName} {creator.lastName || ""}
                                     </p>
-                                    <p className="text-xs text-[var(--muted)]">{creator.emailAddresses[0]?.emailAddress || "No email"}</p>
+                                    <p className="text-xs text-[var(--muted)]">{creator.emailAddresses?.[0]?.emailAddress || "No email"}</p>
                                 </div>
                             </div>
                         )}
@@ -636,35 +712,46 @@ export default function SubjectSelector() {
                             </select>
 
                             <Button onClick={handleAddSubject}>
-                                <Plus className="w-4 h-4" /> 
+                                <Plus className="w-4 h-4" />
                             </Button>
-
                         </div>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    {getSortedSubjects().slice(0, visibleSubjects).map((subject) => {
-                        const details = subjectDetails[subject.subject_id];
-                        const creator = creatorInfo[details?.creatorId];
-                        return (
-                            <SubjectCard
-                                key={subject.subject_id}
-                                subject={subject}
-                                details={details}
-                                creator={creator}
-                            />
-                        );
-                    })}
+                    {initialLoading ? (
+                        // Show skeleton cards during initial loading
+                        [...Array(3)].map((_, index) => <SkeletonCard key={index} />)
+                    ) : (
+                        getSortedSubjects().slice(0, visibleSubjects).map((subject) => {
+                            const details = subjectDetails[subject.subject_id];
+                            const creator = creatorInfo[details?.creatorId];
+                            const isLoading = loadingSubjects.has(subject.subject_id);
+
+                            // Show skeleton card while loading subject details
+                            if (isLoading || !details) {
+                                return <SkeletonCard key={subject.subject_id} />;
+                            }
+
+                            return (
+                                <SubjectCard
+                                    key={subject.subject_id}
+                                    subject={subject}
+                                    details={details}
+                                    creator={creator}
+                                />
+                            );
+                        })
+                    )}
                     {visibleSubjects < getSortedSubjects().length && (
                         <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
-                            {loading && <div className="text-[var(--muted)]">Loading more...</div>}
+                            {loadingSubjects.size > 0 && <div className="text-[var(--muted)]">Loading more...</div>}
                         </div>
                     )}
                     {visibleSubjects >= getSortedSubjects().length && getSortedSubjects().length > 0 && (
                         <p className="text-center text-[var(--muted)]">All subjects loaded</p>
                     )}
-                    {!getSortedSubjects().length && (
+                    {!getSortedSubjects().length && !initialLoading && (
                         <p className="text-center text-[var(--muted)]">No subjects available. Add one to get started!</p>
                     )}
                 </div>
