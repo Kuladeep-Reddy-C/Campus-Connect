@@ -63,8 +63,8 @@ app.use("/api/join-forms", teamRoutes)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NEW EVENTS MODULE ROUTES <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // Apply your custom API key verification to the event and registration routes
-app.use('/api/events', verifyApiKey, eventRoutes);
-app.use('/api/register', verifyApiKey, registrationRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/register', registrationRoutes);
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END NEW ROUTES <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
